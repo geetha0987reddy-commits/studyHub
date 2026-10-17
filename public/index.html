@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyHub - AI Study Assistant</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Marked.js for clean markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Flashcard 3D flip animation */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+    .card-flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+    /* Smooth transitions */
+    .transition-transform-600 {
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
+
+  <div class="flex h-full overflow-hidden">
+    <!-- Sidebar for Desktop -->
+    <aside id="sidebar" class="hidden md:flex md:flex-col w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 select-none z-20">
+      <!-- App Brand -->
+      <div class="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+          </div>
+          <div>
+            <h1 class="font-bold text-lg leading-none bg-gradient-to-r from-brand-600 to-violet-600 bg-clip-text text-transparent">StudyHub</h1>
+            <span class="text-xs text-slate-400 font-medium">AI Study Assistant</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto" id="desktopNav">
+        <button onclick="switchTab('dashboard')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors" data-tab="dashboard">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+          </svg>
+          <span>Dashboard</span>
+        </button>
+
+        <button onclick="switchTab('pomodoro')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors" data-tab="pomodoro">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span>Focus Mode</span>
+        </button>
+
+        <button onclick="switchTab('workspace')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors" data-tab="workspace">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <span>AI PDF Workspace</span>
+        </button>
+
+        <button onclick="switchTab('quiz')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors" data-tab="quiz">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+          </svg>
+          <span>Dynamic Quiz</span>
+        </button>
+
+        <button onclick="switchTab('flashcards')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors" data-tab="flashcards">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <span>Flashcards</span>
+        </button>
+
+        <button onclick="switchTab('analytics')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors" data-tab="analytics">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+          <span>Analytics</span>
+        </button>
+      </nav>
+
+      <!-- Active Document Mini Pill & Dark Mode Toggle -->
+      <div class="p-4 border-t border-slate-100 dark:border-slate-700/60 space-y-3">
+        <div id="sidebarDocStatus" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-700/50 text-xs">
+          <div class="text-slate-400 dark:text-slate-400 font-medium">Loaded Document</div>
+          <div id="sidebarDocName" class="font-semibold text-slate-700 dark:text-slate-200 truncate mt-0.5">None loaded</div>
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Dark Mode</span>
+          <button id="themeToggleBtn" onclick="toggleDarkMode()" aria-label="Toggle Dark Mode" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+            <svg id="themeIconSun" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            <svg id="themeIconMoon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Mobile Top Navigation Header -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+      <header class="md:hidden flex items-center justify-between p-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 select-none">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+          </div>
+          <span class="font-bold text-lg bg-gradient-to-r from-brand-600 to-violet-600 bg-clip-text text-transparent">StudyHub</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+            <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content Area Scrollable -->
+      <main class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="max-w-6xl mx-auto pb-16">
+
+          <!-- Global Notification Banner for API/Error messages -->
+          <div id="globalNotification" class="hidden mb-6 p-4 rounded-xl border flex items-center justify-between text-sm transition-all duration-200">
+            <div class="flex items-center gap-3">
+              <span id="notificationIcon" class="text-xl">⚠️</span>
+              <span id="notificationMessage" class="font-medium"></span>
+            </div>
+            <button onclick="dismissNotification()" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">&times;</button>
+          </div>
+
+          <!-- ============================================================== -->
+          <!-- MODULE 1: DASHBOARD -->
+          <!-- ============================================================== -->
+          <section id="tab-dashboard" class="tab-pane space-y-6">
+            <!-- Welcome Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Welcome to StudyHub</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Your AI-powered study companion for deep focus, comprehension, and mastery.</p>
+              </div>
+              <button onclick="switchTab('workspace')" class="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-sm transition-all shadow-brand-500/25">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span>Upload Study Material</span>
+              </button>
+            </div>
+
+            <!-- Stats Overview Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <!-- Stat: Total Study Time -->
+              <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Study Time</span>
+                  <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  </div>
+                </div>
+                <div id="dashTotalTime" class="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white mt-3">0m</div>
+                <div class="text-xs text-slate-400 mt-1">Focused study tracking</div>
+              </div>
+
+              <!-- Stat: Completed Pomodoros -->
+              <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pomodoro Sessions</span>
+                  <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  </div>
+                </div>
+                <div id="dashCompletedSessions" class="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white mt-3">0</div>
+                <div class="text-xs text-slate-400 mt-1">25-minute focus intervals</div>
+              </div>
+
+              <!-- Stat: Loaded Document -->
+              <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Document</span>
+                  <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  </div>
+                </div>
+                <div id="dashDocName" class="text-base font-bold text-slate-800 dark:text-white mt-3 truncate" title="No document loaded">No document loaded</div>
+                <div id="dashDocType" class="text-xs text-slate-400 mt-1">Click to upload material</div>
+              </div>
+
+              <!-- Stat: Today's Goal -->
+              <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Goal</span>
+                  <div class="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                  </div>
+                </div>
+                <div class="flex items-baseline justify-between mt-3">
+                  <span id="dashGoalPercentage" class="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white">0%</span>
+                  <span id="dashGoalFraction" class="text-xs font-medium text-slate-500">0 / 2 sessions</span>
+                </div>
+                <div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full mt-2 overflow-hidden">
+                  <div id="dashGoalProgressBar" class="bg-brand-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Navigation Action Cards -->
+            <div class="space-y-3">
+              <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Study Modules</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Focus Mode Card -->
+                <div onclick="switchTab('pomodoro')" class="group cursor-pointer bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-brand-500/50 transition-all">
+                  <div class="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  </div>
+                  <h4 class="font-bold text-slate-800 dark:text-white text-base">Focus Mode</h4>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">25-minute Pomodoro study sessions with automatic breaks and progress tracking.</p>
+                  <div class="mt-4 flex items-center text-xs font-semibold text-brand-600 dark:text-brand-400 gap-1">
+                    <span>Start Studying</span>
+                    <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                </div>
+
+                <!-- AI PDF Workspace Card -->
+                <div onclick="switchTab('workspace')" class="group cursor-pointer bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-brand-500/50 transition-all">
+                  <div class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  </div>
+                  <h4 class="font-bold text-slate-800 dark:text-white text-base">AI PDF Workspace</h4>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Upload study materials, generate structured revision summaries, and resolve doubts with Gemini AI.</p>
+                  <div class="mt-4 flex items-center text-xs font-semibold text-brand-600 dark:text-brand-400 gap-1">
+                    <span>Open Workspace</span>
+                    <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                </div>
+
+                <!-- Dynamic Quiz Card -->
+                <div onclick="switchTab('quiz')" class="group cursor-pointer bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-brand-500/50 transition-all">
+                  <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                  </div>
+                  <h4 class="font-bold text-slate-800 dark:text-white text-base">Dynamic Quiz</h4>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Test your comprehension with 5 auto-generated MCQs featuring instant answer feedback.</p>
+                  <div class="mt-4 flex items-center text-xs font-semibold text-brand-600 dark:text-brand-400 gap-1">
+                    <span>Take Quiz</span>
+                    <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                </div>
+
+                <!-- Flashcards Card -->
+                <div onclick="switchTab('flashcards')" class="group cursor-pointer bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-brand-500/50 transition-all">
+                  <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                  </div>
+                  <h4 class="font-bold text-slate-800 dark:text-white text-base">Flashcards</h4>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Review 8 interactive 3D flip cards covering core concepts, terms, and definitions.</p>
+                  <div class="mt-4 flex items-center text-xs font-semibold text-brand-600 dark:text-brand-400 gap-1">
+                    <span>Study Cards</span>
+                    <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                </div>
+
+                <!-- Analytics Card -->
+                <div onclick="switchTab('analytics')" class="group cursor-pointer bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-brand-500/50 transition-all">
+                  <div class="w-12 h-12 rounded-xl bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                  </div>
+                  <h4 class="font-bold text-slate-800 dark:text-white text-base">Analytics</h4>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Track daily goal progress, study time metrics, and manage your learning statistics.</p>
+                  <div class="mt-4 flex items-center text-xs font-semibold text-brand-600 dark:text-brand-400 gap-1">
+                    <span>View Progress</span>
+                    <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============================================================== -->
+          <!-- MODULE 2: FOCUS MODE / POMODORO TIMER -->
+          <!-- ============================================================== -->
+          <section id="tab-pomodoro" class="tab-pane hidden space-y-6">
+            <div>
+              <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Focus Mode</h2>
+              <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Science-backed Pomodoro intervals to maintain high cognitive focus and prevent fatigue.</p>
+            </div>
+
+            <!-- Timer Card -->
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 md:p-12 border border-slate-200/80 dark:border-slate-700/80 shadow-sm text-center max-w-2xl mx-auto">
+              <!-- Mode Badge -->
+              <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase" id="pomoModeBadge">
+                <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                <span id="pomoModeText">FOCUS SESSION</span>
+              </div>
+
+              <!-- Big Timer Display -->
+              <div class="my-8">
+                <div id="pomoTimerDisplay" class="text-7xl md:text-8xl font-black tracking-tight text-slate-900 dark:text-white font-mono select-none">
+                  25:00
+                </div>
+                <p id="pomoStatusMessage" class="text-sm text-slate-500 dark:text-slate-400 mt-3 font-medium">
+                  Ready to focus? Click start to begin your 25-minute study sprint.
+                </p>
+              </div>
+
+              <!-- Progress Bar -->
+              <div class="w-full bg-slate-100 dark:bg-slate-700 h-3 rounded-full mb-8 overflow-hidden">
+                <div id="pomoProgressBar" class="bg-gradient-to-r from-brand-600 to-violet-600 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+
+              <!-- Controls -->
+              <div class="flex items-center justify-center gap-4">
+                <button id="pomoStartBtn" onclick="startPomodoro()" class="px-8 py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md shadow-brand-500/25 transition-all flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span>Start</span>
+                </button>
+                <button id="pomoPauseBtn" onclick="pausePomodoro()" class="hidden px-8 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md shadow-amber-500/25 transition-all flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span>Pause</span>
+                </button>
+                <button onclick="resetPomodoro()" class="px-6 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-sm transition-all flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                  <span>Reset</span>
+                </button>
+              </div>
+
+              <!-- Quick Pomodoro Stats Summary -->
+              <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700/60 grid grid-cols-2 gap-4 text-left">
+                <div>
+                  <div class="text-xs text-slate-400 font-medium">Session Study Time</div>
+                  <div id="pomoSessionTime" class="text-lg font-bold text-slate-800 dark:text-white mt-0.5">0m</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-400 font-medium">Completed Today</div>
+                  <div id="pomoSessionsCount" class="text-lg font-bold text-slate-800 dark:text-white mt-0.5">0 sessions</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============================================================== -->
+          <!-- MODULE 3: AI PDF WORKSPACE -->
+          <!-- ============================================================== -->
+          <section id="tab-workspace" class="tab-pane hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">AI Document Workspace</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Upload study materials to power instant AI summaries and interactive doubt-solving.</p>
+              </div>
+              <div id="workspaceActiveBadge" class="hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 text-xs font-semibold border border-brand-200 dark:border-brand-800">
+                <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+                <span id="workspaceLoadedDocTitle">Doc Loaded</span>
+              </div>
+            </div>
+
+            <!-- Upload Box / Methods -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm space-y-4">
+              <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3 text-sm font-semibold">
+                <button id="tabBtnFile" onclick="switchUploadMethod('file')" class="px-3 py-1.5 rounded-lg bg-brand-50 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300">Upload File (PDF / Text)</button>
+                <button id="tabBtnPaste" onclick="switchUploadMethod('paste')" class="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">Paste Text Material</button>
+              </div>
+
+              <!-- Upload File Option -->
+              <div id="uploadFileSection" class="space-y-4">
+                <div id="dropZone" class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-8 text-center hover:border-brand-500 dark:hover:border-brand-400 transition-colors cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                  <input type="file" id="fileInput" class="hidden" accept=".pdf,.txt,.md,.markdown" onchange="handleFileSelected(event)">
+                  <div class="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                  </div>
+                  <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Click to upload or drag & drop</p>
+                  <p class="text-xs text-slate-400 mt-1">PDF documents (via Gemini Files API) or Text files (.txt, .md). Max 50 MB.</p>
+                  <div id="selectedFileName" class="hidden mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-brand-100 dark:bg-brand-900/50 text-brand-800 dark:text-brand-200 text-xs font-semibold">
+                    <span id="selectedFileNameText"></span>
+                  </div>
+                </div>
+
+                <div class="flex justify-end">
+                  <button id="uploadDocBtn" onclick="uploadSelectedFile()" disabled class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-sm transition-all flex items-center gap-2">
+                    <span id="uploadDocBtnSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                    <span id="uploadDocBtnText">Upload & Ingest Document</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Paste Text Option -->
+              <div id="uploadPasteSection" class="hidden space-y-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Document Title</label>
+                  <input type="text" id="pasteDocTitle" placeholder="e.g. Chapter 4 - Thermodynamics Notes" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-brand-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Study Material Content</label>
+                  <textarea id="pasteDocContent" rows="6" placeholder="Paste textbook excerpts, lecture notes, or study guidelines here..." class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-brand-500 font-sans"></textarea>
+                </div>
+                <div class="flex justify-end">
+                  <button id="savePastedDocBtn" onclick="uploadPastedContent()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-sm transition-all flex items-center gap-2">
+                    <span id="savePastedBtnSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                    <span>Save & Use Material</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Workspace Features Split: Summary & Doubt Solver -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              <!-- AI Summary Card -->
+              <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="font-bold text-base text-slate-800 dark:text-white">AI Study Summary</h3>
+                  </div>
+                  <button id="generateSummaryBtn" onclick="generateSummary()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5">
+                    <span id="summarySpinner" class="hidden animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></span>
+                    <span>Generate Summary</span>
+                  </button>
+                </div>
+
+                <div id="summaryPlaceholder" class="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
+                  <svg class="w-12 h-12 stroke-1 mb-2 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  <p class="text-sm font-medium">No summary generated yet.</p>
+                  <p class="text-xs mt-1">Load a document and click "Generate Summary" to extract key concepts, formulas, definitions, and exam points.</p>
+                </div>
+
+                <div id="summaryContent" class="hidden flex-1 overflow-y-auto mt-4 pr-1 text-sm space-y-4 max-h-[500px]">
+                  <div id="summaryMarkdown" class="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 leading-relaxed"></div>
+                </div>
+              </div>
+
+              <!-- AI Doubt Solver / Chat Card -->
+              <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col h-[600px]">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                    </div>
+                    <div>
+                      <h3 class="font-bold text-base text-slate-800 dark:text-white">AI Doubt Solver</h3>
+                      <p class="text-xs text-slate-400">Strictly grounded in your uploaded material</p>
+                    </div>
+                  </div>
+                  <button onclick="clearChat()" class="text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Clear</button>
+                </div>
+
+                <!-- Chat Messages Stream -->
+                <div id="chatMessages" class="flex-1 overflow-y-auto py-4 space-y-3 pr-1 text-sm">
+                  <div class="flex items-start gap-3">
+                    <div class="w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">AI</div>
+                    <div class="bg-slate-100 dark:bg-slate-700/60 rounded-2xl rounded-tl-none p-3.5 text-xs md:text-sm text-slate-700 dark:text-slate-200 max-w-[85%]">
+                      Hello! Ask me any question about your loaded study material. I'll explain complex concepts simply with examples!
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Chat Input Form -->
+                <form id="chatForm" onsubmit="handleSendQuestion(event)" class="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center gap-2">
+                  <input type="text" id="chatInput" placeholder="Ask a doubt about this document..." class="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:border-brand-500">
+                  <button type="submit" id="chatSendBtn" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-sm transition-all flex items-center gap-1.5">
+                    <span id="chatSpinner" class="hidden animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></span>
+                    <span>Ask</span>
+                  </button>
+                </form>
+              </div>
+
+            </div>
+          </section>
+
+          <!-- ============================================================== -->
+          <!-- MODULE 4: DYNAMIC QUIZ GENERATOR -->
+          <!-- ============================================================== -->
+          <section id="tab-quiz" class="tab-pane hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Dynamic Quiz Generator</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Generate 5 multiple-choice questions to evaluate your understanding.</p>
+              </div>
+              <button id="generateQuizBtn" onclick="generateQuiz()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-sm transition-all shadow-brand-500/25">
+                <span id="quizSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                <span>Generate 5 MCQs</span>
+              </button>
+            </div>
+
+            <!-- Quiz Placeholder -->
+            <div id="quizPlaceholder" class="bg-white dark:bg-slate-800 rounded-2xl p-12 text-center border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+              </div>
+              <h3 class="font-bold text-lg text-slate-800 dark:text-white">Ready for a Quick Quiz?</h3>
+              <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">Make sure your study document is loaded, then click "Generate 5 MCQs" above to start testing your knowledge.</p>
+            </div>
+
+            <!-- Quiz Running Container -->
+            <div id="quizContainer" class="hidden space-y-6">
+              <!-- Score Tracker Header -->
+              <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Quiz Progress</span>
+                  <div class="text-sm font-bold text-slate-800 dark:text-white" id="quizAnsweredCount">0 / 5 Answered</div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current Score</span>
+                  <div class="text-sm font-bold text-brand-600 dark:text-brand-400" id="quizScoreText">0 / 5 Correct</div>
+                </div>
+              </div>
+
+              <!-- Questions List -->
+              <div id="quizQuestionsList" class="space-y-6"></div>
+
+              <!-- Quiz Final Score Banner -->
+              <div id="quizCompletionBanner" class="hidden bg-gradient-to-tr from-brand-600 to-violet-600 text-white rounded-3xl p-8 text-center shadow-lg">
+                <div class="text-4xl mb-2">🎉</div>
+                <h3 class="text-2xl font-bold">Quiz Completed!</h3>
+                <p id="quizFinalScoreSummary" class="text-brand-100 text-sm mt-1">You scored 5 out of 5 (100%)</p>
+                <div class="mt-6 flex items-center justify-center gap-3">
+                  <button onclick="generateQuiz()" class="px-5 py-2.5 rounded-xl bg-white text-brand-700 font-bold text-xs shadow hover:bg-brand-50 transition-colors">Generate New Quiz</button>
+                  <button onclick="retakeCurrentQuiz()" class="px-5 py-2.5 rounded-xl bg-brand-700/60 hover:bg-brand-700 text-white font-semibold text-xs transition-colors">Retake This Quiz</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============================================================== -->
+          <!-- MODULE 5: FLASHCARDS -->
+          <!-- ============================================================== -->
+          <section id="tab-flashcards" class="tab-pane hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Study Flashcards</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">8 interactive 3D flip cards to reinforce memory retention and recall.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button id="flipAllCardsBtn" onclick="toggleFlipAllCards()" class="hidden px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all">
+                  Flip All
+                </button>
+                <button id="generateCardsBtn" onclick="generateFlashcards()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-sm transition-all shadow-brand-500/25">
+                  <span id="cardsSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                  <span>Generate Flashcards</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Flashcards Placeholder -->
+            <div id="flashcardsPlaceholder" class="bg-white dark:bg-slate-800 rounded-2xl p-12 text-center border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+              <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+              </div>
+              <h3 class="font-bold text-lg text-slate-800 dark:text-white">No Flashcards Created Yet</h3>
+              <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">Upload or paste study material, then click "Generate Flashcards" to create 8 interactive flip cards.</p>
+            </div>
+
+            <!-- Flashcards Grid -->
+            <div id="flashcardsGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
+          </section>
+
+          <!-- ============================================================== -->
+          <!-- MODULE 6: PERFORMANCE ANALYTICS -->
+          <!-- ============================================================== -->
+          <section id="tab-analytics" class="tab-pane hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Performance Analytics</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Real-time statistics on your study habits and daily goal completion.</p>
+              </div>
+              <button onclick="confirmResetAnalytics()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 font-semibold text-xs border border-rose-200 dark:border-rose-800 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <span>Reset Analytics</span>
+              </button>
+            </div>
+
+            <!-- Analytics Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <!-- Total Study Time -->
+              <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-4">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Study Time</span>
+                <div id="analyticsTotalTime" class="text-3xl font-black text-slate-900 dark:text-white mt-1">0m</div>
+                <p class="text-xs text-slate-400 mt-2">Accumulated across all focus sessions</p>
+              </div>
+
+              <!-- Completed Pomodoros -->
+              <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Completed Sessions</span>
+                <div id="analyticsCompletedSessions" class="text-3xl font-black text-slate-900 dark:text-white mt-1">0</div>
+                <p class="text-xs text-slate-400 mt-2">Full 25-minute Pomodoros finished</p>
+              </div>
+
+              <!-- Daily Goal Percentage -->
+              <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-4">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Goal (2 Sessions)</span>
+                <div id="analyticsGoalPercentage" class="text-3xl font-black text-slate-900 dark:text-white mt-1">0%</div>
+                <p id="analyticsGoalSubtitle" class="text-xs text-slate-400 mt-2">0 of 2 sessions completed today</p>
+              </div>
+            </div>
+
+            <!-- Goal Progress Bar Card -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200/80 dark:border-slate-700/80 shadow-sm space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="font-bold text-base text-slate-900 dark:text-white">Daily Target Progress</h3>
+                  <p class="text-xs text-slate-400 mt-0.5">Calculated as: min(100, (Completed Sessions / 2) &times; 100)%</p>
+                </div>
+                <span id="analyticsBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                  In Progress
+                </span>
+              </div>
+
+              <div class="w-full bg-slate-100 dark:bg-slate-700 h-4 rounded-full overflow-hidden">
+                <div id="analyticsProgressBar" class="bg-gradient-to-r from-brand-600 to-violet-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-400 font-medium pt-1">
+                <span>0 Sessions</span>
+                <span>1 Session (50%)</span>
+                <span>2 Sessions (Goal: 100%)</span>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+
+      <!-- Mobile Bottom Navigation Bar -->
+      <nav class="md:hidden flex items-center justify-around bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-2 px-1 text-xs select-none z-20">
+        <button onclick="switchTab('dashboard')" class="mobile-nav-item flex flex-col items-center gap-1 p-1 text-slate-500" data-tab="dashboard">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+          <span class="text-[10px]">Home</span>
+        </button>
+        <button onclick="switchTab('pomodoro')" class="mobile-nav-item flex flex-col items-center gap-1 p-1 text-slate-500" data-tab="pomodoro">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span class="text-[10px]">Focus</span>
+        </button>
+        <button onclick="switchTab('workspace')" class="mobile-nav-item flex flex-col items-center gap-1 p-1 text-slate-500" data-tab="workspace">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span class="text-[10px]">Docs</span>
+        </button>
+        <button onclick="switchTab('quiz')" class="mobile-nav-item flex flex-col items-center gap-1 p-1 text-slate-500" data-tab="quiz">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+          <span class="text-[10px]">Quiz</span>
+        </button>
+        <button onclick="switchTab('flashcards')" class="mobile-nav-item flex flex-col items-center gap-1 p-1 text-slate-500" data-tab="flashcards">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          <span class="text-[10px]">Cards</span>
+        </button>
+        <button onclick="switchTab('analytics')" class="mobile-nav-item flex flex-col items-center gap-1 p-1 text-slate-500" data-tab="analytics">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          <span class="text-[10px]">Stats</span>
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Reset Analytics Confirmation Modal -->
+  <div id="resetModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+      <div class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+      </div>
+      <div>
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">Reset Study Analytics?</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">This will permanently clear your accumulated study time and completed Pomodoro sessions. This action cannot be undone.</p>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closeResetModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors">Cancel</button>
+        <button onclick="executeResetAnalytics()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-xs font-semibold text-white transition-colors">Yes, Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vanilla JavaScript Application Logic -->
+  <script>
+    // -------------------------------------------------------------
+    // Application State & Storage
+    // -------------------------------------------------------------
+    const STATE = {
+      activeTab: 'dashboard',
+      activeDocument: null, // { documentId, name, type }
+      pomodoro: {
+        mode: 'focus', // 'focus' | 'break'
+        timeLeft: 25 * 60, // seconds
+        isRunning: false,
+        timerId: null,
+        focusDuration: 25 * 60,
+        breakDuration: 5 * 60
+      },
+      stats: {
+        totalSeconds: 0,
+        completedSessions: 0
+      },
+      currentQuiz: null, // array of questions
+      quizUserAnswers: {},
+      currentCards: []
+    };
+
+    // Load persisted data on init
+    function loadSavedState() {
+      // Dark Mode
+      const savedTheme = localStorage.getItem('studyhub_theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+
+      // Stats
+      const savedSecs = parseInt(localStorage.getItem('studyhub_total_seconds'), 10);
+      const savedSessions = parseInt(localStorage.getItem('studyhub_completed_sessions'), 10);
+      if (!isNaN(savedSecs)) STATE.stats.totalSeconds = savedSecs;
+      if (!isNaN(savedSessions)) STATE.stats.completedSessions = savedSessions;
+
+      // Active Document session
+      const savedDoc = localStorage.getItem('studyhub_active_doc');
+      if (savedDoc) {
+        try {
+          STATE.activeDocument = JSON.parse(savedDoc);
+        } catch (e) {}
+      }
+
+      updateStatsUI();
+      updateDocumentUI();
+    }
+
+    function saveStats() {
+      localStorage.setItem('studyhub_total_seconds', STATE.stats.totalSeconds.toString());
+      localStorage.setItem('studyhub_completed_sessions', STATE.stats.completedSessions.toString());
+      updateStatsUI();
+    }
+
+    function saveActiveDoc(doc) {
+      STATE.activeDocument = doc;
+      if (doc) {
+        localStorage.setItem('studyhub_active_doc', JSON.stringify(doc));
+      } else {
+        localStorage.removeItem('studyhub_active_doc');
+      }
+      updateDocumentUI();
+    }
+
+    // -------------------------------------------------------------
+    // Dark Mode Toggle
+    // -------------------------------------------------------------
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('studyhub_theme', isDark ? 'dark' : 'light');
+    }
+
+    // -------------------------------------------------------------
+    // Tab Navigation
+    // -------------------------------------------------------------
+    function switchTab(tabId) {
+      STATE.activeTab = tabId;
+
+      // Hide all panes
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+
+      // Show selected pane
+      const targetPane = document.getElementById(`tab-${tabId}`);
+      if (targetPane) targetPane.classList.remove('hidden');
+
+      // Update Desktop Nav styles
+      document.querySelectorAll('#desktopNav .nav-item').forEach(btn => {
+        const isActive = btn.dataset.tab === tabId;
+        if (isActive) {
+          btn.className = 'nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 shadow-sm';
+        } else {
+          btn.className = 'nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50';
+        }
+      });
+
+      // Update Mobile Nav styles
+      document.querySelectorAll('.mobile-nav-item').forEach(btn => {
+        const isActive = btn.dataset.tab === tabId;
+        if (isActive) {
+          btn.className = 'mobile-nav-item flex flex-col items-center gap-1 p-1 text-brand-600 dark:text-brand-400 font-bold';
+        } else {
+          btn.className = 'mobile-nav-item flex flex-col items-center gap-1 p-1 text-slate-500 dark:text-slate-400';
+        }
+      });
+
+      // Scroll to top of main content
+      window.scrollTo(0, 0);
+    }
+
+    // -------------------------------------------------------------
+    // Notifications
+    // -------------------------------------------------------------
+    function showNotification(msg, type = 'error') {
+      const banner = document.getElementById('globalNotification');
+      const textEl = document.getElementById('notificationMessage');
+      const iconEl = document.getElementById('notificationIcon');
+
+      textEl.textContent = msg;
+      banner.classList.remove('hidden');
+
+      if (type === 'error') {
+        banner.className = 'mb-6 p-4 rounded-xl border flex items-center justify-between text-sm transition-all duration-200 bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-200';
+        iconEl.textContent = '⚠️';
+      } else if (type === 'success') {
+        banner.className = 'mb-6 p-4 rounded-xl border flex items-center justify-between text-sm transition-all duration-200 bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-200';
+        iconEl.textContent = '✅';
+      } else {
+        banner.className = 'mb-6 p-4 rounded-xl border flex items-center justify-between text-sm transition-all duration-200 bg-brand-50 border-brand-200 text-brand-800 dark:bg-brand-900/30 dark:border-brand-800 dark:text-brand-200';
+        iconEl.textContent = 'ℹ️';
+      }
+    }
+
+    function dismissNotification() {
+      document.getElementById('globalNotification').classList.add('hidden');
+    }
+
+    // -------------------------------------------------------------
+    // Audio Chime (Browser Web Audio API Synthesis)
+    // -------------------------------------------------------------
+    function playChime() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); // A5
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.8);
+      } catch (e) {
+        // AudioContext may be blocked before interaction, safely ignore
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Statistics & Document UI Sync
+    // -------------------------------------------------------------
+    function formatTime(totalSeconds) {
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+      }
+      return `${minutes}m`;
+    }
+
+    function updateStatsUI() {
+      const formatted = formatTime(STATE.stats.totalSeconds);
+      const sessions = STATE.stats.completedSessions;
+      const dailyGoalTarget = 2;
+      const percentage = Math.min(100, Math.round((sessions / dailyGoalTarget) * 100));
+
+      // Dashboard
+      const dTotalTime = document.getElementById('dashTotalTime');
+      const dSessions = document.getElementById('dashCompletedSessions');
+      const dGoalPct = document.getElementById('dashGoalPercentage');
+      const dGoalFrac = document.getElementById('dashGoalFraction');
+      const dGoalBar = document.getElementById('dashGoalProgressBar');
+
+      if (dTotalTime) dTotalTime.textContent = formatted;
+      if (dSessions) dSessions.textContent = sessions;
+      if (dGoalPct) dGoalPct.textContent = `${percentage}%`;
+      if (dGoalFrac) dGoalFrac.textContent = `${sessions} / ${dailyGoalTarget} sessions`;
+      if (dGoalBar) dGoalBar.style.width = `${percentage}%`;
+
+      // Focus Mode Tab
+      const pSessionTime = document.getElementById('pomoSessionTime');
+      const pSessionsCount = document.getElementById('pomoSessionsCount');
+      if (pSessionTime) pSessionTime.textContent = formatted;
+      if (pSessionsCount) pSessionsCount.textContent = `${sessions} session${sessions === 1 ? '' : 's'}`;
+
+      // Analytics Tab
+      const aTotalTime = document.getElementById('analyticsTotalTime');
+      const aSessions = document.getElementById('analyticsCompletedSessions');
+      const aGoalPct = document.getElementById('analyticsGoalPercentage');
+      const aGoalSub = document.getElementById('analyticsGoalSubtitle');
+      const aProgressBar = document.getElementById('analyticsProgressBar');
+      const aBadge = document.getElementById('analyticsBadge');
+
+      if (aTotalTime) aTotalTime.textContent = formatted;
+      if (aSessions) aSessions.textContent = sessions;
+      if (aGoalPct) aGoalPct.textContent = `${percentage}%`;
+      if (aGoalSub) {
+        aGoalSub.textContent = `${sessions} of ${dailyGoalTarget} sessions completed today`;
+      }
+      if (aProgressBar) aProgressBar.style.width = `${percentage}%`;
+      if (aBadge) {
+        if (percentage >= 100) {
+          aBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300';
+          aBadge.textContent = 'Goal Achieved! 🎉';
+        } else {
+          aBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300';
+          aBadge.textContent = 'In Progress';
+        }
+      }
+    }
+
+    function updateDocumentUI() {
+      const doc = STATE.activeDocument;
+      const sDocName = document.getElementById('sidebarDocName');
+      const dDocName = document.getElementById('dashDocName');
+      const dDocType = document.getElementById('dashDocType');
+      const wBadge = document.getElementById('workspaceActiveBadge');
+      const wTitle = document.getElementById('workspaceLoadedDocTitle');
+
+      if (doc) {
+        const displayName = doc.name || 'Active Study Document';
+        const typeBadge = doc.type ? doc.type.toUpperCase() : 'DOC';
+
+        if (sDocName) sDocName.textContent = displayName;
+        if (dDocName) dDocName.textContent = displayName;
+        if (dDocType) dDocType.textContent = `${typeBadge} Loaded & Ready`;
+        if (wBadge) wBadge.classList.remove('hidden');
+        if (wTitle) wTitle.textContent = `${typeBadge}: ${displayName}`;
+      } else {
+        if (sDocName) sDocName.textContent = 'None loaded';
+        if (dDocName) dDocName.textContent = 'No document loaded';
+        if (dDocType) dDocType.textContent = 'Click to upload material';
+        if (wBadge) wBadge.classList.add('hidden');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // MODULE 2: POMODORO TIMER LOGIC
+    // -------------------------------------------------------------
+    function updateTimerDisplay() {
+      const minutes = Math.floor(STATE.pomodoro.timeLeft / 60);
+      const seconds = STATE.pomodoro.timeLeft % 60;
+      const str = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      document.getElementById('pomoTimerDisplay').textContent = str;
+
+      // Progress bar
+      const totalDuration = STATE.pomodoro.mode === 'focus' ? STATE.pomodoro.focusDuration : STATE.pomodoro.breakDuration;
+      const elapsed = totalDuration - STATE.pomodoro.timeLeft;
+      const pct = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+      document.getElementById('pomoProgressBar').style.width = `${pct}%`;
+    }
+
+    function startPomodoro() {
+      if (STATE.pomodoro.isRunning) return;
+
+      STATE.pomodoro.isRunning = true;
+      document.getElementById('pomoStartBtn').classList.add('hidden');
+      document.getElementById('pomoPauseBtn').classList.remove('hidden');
+
+      const statusMsg = document.getElementById('pomoStatusMessage');
+      if (STATE.pomodoro.mode === 'focus') {
+        statusMsg.textContent = 'Focus in progress. Deep learning mode active.';
+      } else {
+        statusMsg.textContent = 'Break session active. Stretch, drink water, and rest.';
+      }
+
+      STATE.pomodoro.timerId = setInterval(() => {
+        if (STATE.pomodoro.timeLeft > 0) {
+          STATE.pomodoro.timeLeft--;
+
+          // Increment total study time if in focus session
+          if (STATE.pomodoro.mode === 'focus') {
+            STATE.stats.totalSeconds++;
+            // Save to localStorage every 5 seconds or immediately
+            if (STATE.stats.totalSeconds % 5 === 0) {
+              saveStats();
+            } else {
+              updateStatsUI();
+            }
+          }
+
+          updateTimerDisplay();
+        } else {
+          // Timer finished!
+          handleTimerCompletion();
+        }
+      }, 1000);
+    }
+
+    function pausePomodoro() {
+      if (!STATE.pomodoro.isRunning) return;
+
+      STATE.pomodoro.isRunning = false;
+      clearInterval(STATE.pomodoro.timerId);
+      document.getElementById('pomoStartBtn').classList.remove('hidden');
+      document.getElementById('pomoPauseBtn').classList.add('hidden');
+      document.getElementById('pomoStatusMessage').textContent = 'Timer paused. Click start when ready to resume.';
+      saveStats();
+    }
+
+    function resetPomodoro() {
+      pausePomodoro();
+      if (STATE.pomodoro.mode === 'focus') {
+        STATE.pomodoro.timeLeft = STATE.pomodoro.focusDuration;
+        document.getElementById('pomoStatusMessage').textContent = 'Ready to focus? Click start to begin your 25-minute study sprint.';
+      } else {
+        STATE.pomodoro.timeLeft = STATE.pomodoro.breakDuration;
+        document.getElementById('pomoStatusMessage').textContent = 'Ready for a break? Click start to begin your 5-minute recharge.';
+      }
+      updateTimerDisplay();
+    }
+
+    function handleTimerCompletion() {
+      clearInterval(STATE.pomodoro.timerId);
+      STATE.pomodoro.isRunning = false;
+      playChime();
+
+      if (STATE.pomodoro.mode === 'focus') {
+        // Increment completed sessions
+        STATE.stats.completedSessions++;
+        saveStats();
+
+        // Switch to Break Mode
+        STATE.pomodoro.mode = 'break';
+        STATE.pomodoro.timeLeft = STATE.pomodoro.breakDuration;
+
+        const badge = document.getElementById('pomoModeBadge');
+        badge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300';
+        document.getElementById('pomoModeText').textContent = 'BREAK';
+        document.getElementById('pomoStatusMessage').textContent = 'Great work! Focus session finished. Enjoy your 5-minute break.';
+
+        updateTimerDisplay();
+        // Automatically start break
+        startPomodoro();
+      } else {
+        // Break finished, switch back to Focus Mode
+        STATE.pomodoro.mode = 'focus';
+        STATE.pomodoro.timeLeft = STATE.pomodoro.focusDuration;
+
+        const badge = document.getElementById('pomoModeBadge');
+        badge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-300';
+        document.getElementById('pomoModeText').textContent = 'FOCUS SESSION';
+        document.getElementById('pomoStatusMessage').textContent = 'Break complete! Switching back to 25-minute focus session.';
+
+        updateTimerDisplay();
+        // Automatically start focus session
+        startPomodoro();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // MODULE 3: AI PDF WORKSPACE LOGIC
+    // -------------------------------------------------------------
+    let selectedUploadFile = null;
+
+    function switchUploadMethod(method) {
+      const fileTab = document.getElementById('tabBtnFile');
+      const pasteTab = document.getElementById('tabBtnPaste');
+      const fileSection = document.getElementById('uploadFileSection');
+      const pasteSection = document.getElementById('uploadPasteSection');
+
+      if (method === 'file') {
+        fileTab.className = 'px-3 py-1.5 rounded-lg bg-brand-50 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300';
+        pasteTab.className = 'px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200';
+        fileSection.classList.remove('hidden');
+        pasteSection.classList.add('hidden');
+      } else {
+        pasteTab.className = 'px-3 py-1.5 rounded-lg bg-brand-50 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300';
+        fileTab.className = 'px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200';
+        pasteSection.classList.remove('hidden');
+        fileSection.classList.add('hidden');
+      }
+    }
+
+    function handleFileSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      selectedUploadFile = file;
+      const nameEl = document.getElementById('selectedFileName');
+      const textEl = document.getElementById('selectedFileNameText');
+      const uploadBtn = document.getElementById('uploadDocBtn');
+
+      nameEl.classList.remove('hidden');
+      textEl.textContent = `Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+      uploadBtn.removeAttribute('disabled');
+    }
+
+    async function safeJsonResponse(res) {
+      const text = await res.text();
+      if (!text) {
+        return { error: `Request failed with status ${res.status}. The server did not return a response body.` };
+      }
+
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        console.error('Invalid JSON response received from server:', text);
+        return {
+          error: `Request failed with status ${res.status}. The server returned an invalid response.`
+        };
+      }
+    }
+
+    // Drag & Drop handlers
+    const dropZone = document.getElementById('dropZone');
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('border-brand-500', 'bg-brand-50/50', 'dark:bg-brand-900/20');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('border-brand-500', 'bg-brand-50/50', 'dark:bg-brand-900/20');
+      }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const file = dt.files[0];
+      if (file) {
+        document.getElementById('fileInput').files = dt.files;
+        handleFileSelected({ target: { files: [file] } });
+      }
+    });
+
+    async function uploadSelectedFile() {
+      if (!selectedUploadFile) return;
+
+      const btn = document.getElementById('uploadDocBtn');
+      const spinner = document.getElementById('uploadDocBtnSpinner');
+      const btnText = document.getElementById('uploadDocBtnText');
+
+      btn.setAttribute('disabled', 'true');
+      spinner.classList.remove('hidden');
+      btnText.textContent = 'Uploading to Gemini...';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedUploadFile);
+
+        const res = await fetch('/api/documents', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await safeJsonResponse(res);
+        if (!res.ok) {
+          throw new Error(data.error || 'Upload failed');
+        }
+
+        saveActiveDoc(data);
+        showNotification(`Successfully uploaded "${data.name}"!`, 'success');
+
+        // Reset file selection
+        selectedUploadFile = null;
+        document.getElementById('fileInput').value = '';
+        document.getElementById('selectedFileName').classList.add('hidden');
+      } catch (err) {
+        console.error(err);
+        showNotification(err.message, 'error');
+      } finally {
+        spinner.classList.add('hidden');
+        btnText.textContent = 'Upload & Ingest Document';
+        btn.removeAttribute('disabled');
+      }
+    }
+
+    async function uploadPastedContent() {
+      const titleInput = document.getElementById('pasteDocTitle');
+      const contentInput = document.getElementById('pasteDocContent');
+      const text = contentInput.value.trim();
+      const title = titleInput.value.trim() || 'Pasted Study Notes';
+
+      if (!text) {
+        showNotification('Please enter or paste your study material content.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('savePastedDocBtn');
+      const spinner = document.getElementById('savePastedBtnSpinner');
+      btn.setAttribute('disabled', 'true');
+      spinner.classList.remove('hidden');
+
+      try {
+        const res = await fetch('/api/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, name: title })
+        });
+
+        const data = await safeJsonResponse(res);
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to save material');
+        }
+
+        saveActiveDoc(data);
+        showNotification(`Successfully saved "${data.name}"!`, 'success');
+        contentInput.value = '';
+        titleInput.value = '';
+      } catch (err) {
+        console.error(err);
+        showNotification(err.message, 'error');
+      } finally {
+        spinner.classList.add('hidden');
+        btn.removeAttribute('disabled');
+      }
+    }
+
+    // AI Summary
+    async function generateSummary() {
+      if (!STATE.activeDocument) {
+        showNotification('Please upload or paste a study document first.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('generateSummaryBtn');
+      const spinner = document.getElementById('summarySpinner');
+      const placeholder = document.getElementById('summaryPlaceholder');
+      const content = document.getElementById('summaryContent');
+      const markdownEl = document.getElementById('summaryMarkdown');
+
+      btn.setAttribute('disabled', 'true');
+      spinner.classList.remove('hidden');
+
+      try {
+        const res = await fetch('/api/summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentId: STATE.activeDocument.documentId })
+        });
+
+        const data = await safeJsonResponse(res);
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to generate summary');
+        }
+
+        placeholder.classList.add('hidden');
+        content.classList.remove('hidden');
+        markdownEl.innerHTML = marked.parse(data.text || 'No summary text returned.');
+        showNotification('Study summary generated successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        showNotification(err.message, 'error');
+      } finally {
+        spinner.classList.add('hidden');
+        btn.removeAttribute('disabled');
+      }
+    }
+
+    // AI Doubt Solver / Chat
+    async function handleSendQuestion(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const question = input.value.trim();
+      if (!question) return;
+
+      if (!STATE.activeDocument) {
+        showNotification('Please upload a study document first so the AI tutor has source context.', 'error');
+        return;
+      }
+
+      const messagesContainer = document.getElementById('chatMessages');
+      const sendBtn = document.getElementById('chatSendBtn');
+      const spinner = document.getElementById('chatSpinner');
+
+      // Append User message bubble
+      const userBubble = document.createElement('div');
+      userBubble.className = 'flex items-start justify-end gap-3';
+      userBubble.innerHTML = `
+        <div class="bg-brand-600 text-white rounded-2xl rounded-tr-none p-3.5 text-xs md:text-sm max-w-[85%]">
+          ${escapeHtml(question)}
+        </div>
+      `;
+      messagesContainer.appendChild(userBubble);
+      input.value = '';
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      // Loading bubble
+      const loadingBubble = document.createElement('div');
+      loadingBubble.className = 'flex items-start gap-3';
+      loadingBubble.id = 'chatLoadingBubble';
+      loadingBubble.innerHTML = `
+        <div class="w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">AI</div>
+        <div class="bg-slate-100 dark:bg-slate-700/60 rounded-2xl rounded-tl-none p-3.5 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce [animation-delay:0.2s]"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce [animation-delay:0.4s]"></span>
+          <span class="ml-1">Analyzing source material...</span>
+        </div>
+      `;
+      messagesContainer.appendChild(loadingBubble);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      sendBtn.setAttribute('disabled', 'true');
+      spinner.classList.remove('hidden');
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documentId: STATE.activeDocument.documentId,
+            question
+          })
+        });
+
+        const data = await safeJsonResponse(res);
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to get answer');
+        }
+
+        // Replace loading bubble with AI response
+        loadingBubble.remove();
+
+        const aiBubble = document.createElement('div');
+        aiBubble.className = 'flex items-start gap-3';
+        aiBubble.innerHTML = `
+          <div class="w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">AI</div>
+          <div class="bg-slate-100 dark:bg-slate-700/60 rounded-2xl rounded-tl-none p-3.5 text-xs md:text-sm text-slate-800 dark:text-slate-100 max-w-[85%] prose prose-sm dark:prose-invert">
+            ${marked.parse(data.answer || '')}
+          </div>
+        `;
+        messagesContainer.appendChild(aiBubble);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      } catch (err) {
+        loadingBubble.remove();
+        showNotification(err.message, 'error');
+      } finally {
+        spinner.classList.add('hidden');
+        sendBtn.removeAttribute('disabled');
+      }
+    }
+
+    function clearChat() {
+      const container = document.getElementById('chatMessages');
+      container.innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">AI</div>
+          <div class="bg-slate-100 dark:bg-slate-700/60 rounded-2xl rounded-tl-none p-3.5 text-xs md:text-sm text-slate-700 dark:text-slate-200 max-w-[85%]">
+            Conversation cleared. Feel free to ask a new question about your loaded material!
+          </div>
+        </div>
+      `;
+    }
+
+    // -------------------------------------------------------------
+    // MODULE 4: DYNAMIC QUIZ GENERATOR
+    // -------------------------------------------------------------
+    async function generateQuiz() {
+      if (!STATE.activeDocument) {
+        showNotification('Please upload or select a study document first.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('generateQuizBtn');
+      const spinner = document.getElementById('quizSpinner');
+      const placeholder = document.getElementById('quizPlaceholder');
+      const container = document.getElementById('quizContainer');
+      const completionBanner = document.getElementById('quizCompletionBanner');
+
+      btn.setAttribute('disabled', 'true');
+      spinner.classList.remove('hidden');
+
+      try {
+        const res = await fetch('/api/quiz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentId: STATE.activeDocument.documentId })
+        });
+
+        const data = await safeJsonResponse(res);
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to generate quiz');
+        }
+
+        if (!data.questions || data.questions.length === 0) {
+          throw new Error('No quiz questions returned from model');
+        }
+
+        STATE.currentQuiz = data.questions;
+        STATE.quizUserAnswers = {};
+
+        placeholder.classList.add('hidden');
+        completionBanner.classList.add('hidden');
+        container.classList.remove('hidden');
+
+        renderQuiz();
+        showNotification('5 MCQs generated successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        showNotification(err.message, 'error');
+      } finally {
+        spinner.classList.add('hidden');
+        btn.removeAttribute('disabled');
+      }
+    }
+
+    function renderQuiz() {
+      const list = document.getElementById('quizQuestionsList');
+      list.innerHTML = '';
+
+      let answeredCount = 0;
+      let scoreCount = 0;
+
+      STATE.currentQuiz.forEach((q, qIndex) => {
+        const userAnswer = STATE.quizUserAnswers[qIndex];
+        const isAnswered = userAnswer !== undefined;
+
+        if (isAnswered) {
+          answeredCount++;
+          if (userAnswer === q.answer) scoreCount++;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm space-y-4';
+
+        // Header & Question
+        let optionsHtml = '';
+        q.options.forEach((optText, optIdx) => {
+          let btnClasses = 'w-full text-left p-3.5 rounded-xl border text-xs md:text-sm font-medium transition-all flex items-center justify-between ';
+
+          if (!isAnswered) {
+            btnClasses += 'border-slate-200 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-400 hover:bg-brand-50/50 dark:hover:bg-brand-900/20 text-slate-700 dark:text-slate-200';
+          } else {
+            // Disabled state
+            if (optIdx === q.answer) {
+              // Correct option highlight
+              btnClasses += 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 font-bold';
+            } else if (optIdx === userAnswer && userAnswer !== q.answer) {
+              // Incorrect selection
+              btnClasses += 'border-rose-500 bg-rose-50 dark:bg-rose-900/30 text-rose-800 dark:text-rose-200';
+            } else {
+              btnClasses += 'border-slate-200 dark:border-slate-700 opacity-60 text-slate-500';
+            }
+          }
+
+          const optLetter = String.fromCharCode(65 + optIdx);
+          optionsHtml += `
+            <button
+              onclick="handleSelectQuizAnswer(${qIndex}, ${optIdx})"
+              ${isAnswered ? 'disabled' : ''}
+              class="${btnClasses}">
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300">${optLetter}</span>
+                <span>${escapeHtml(optText)}</span>
+              </div>
+              ${isAnswered && optIdx === q.answer ? '<span class="text-emerald-600 dark:text-emerald-400 font-bold text-xs">✅ Correct</span>' : ''}
+              ${isAnswered && optIdx === userAnswer && userAnswer !== q.answer ? '<span class="text-rose-600 dark:text-rose-400 font-bold text-xs">❌ Incorrect</span>' : ''}
+            </button>
+          `;
+        });
+
+        // Explanation Box
+        let explanationHtml = '';
+        if (isAnswered) {
+          const isCorrect = userAnswer === q.answer;
+          explanationHtml = `
+            <div class="mt-4 p-4 rounded-xl text-xs md:text-sm ${isCorrect ? 'bg-emerald-50/70 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200' : 'bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'}">
+              <span class="font-bold block mb-1">Explanation:</span>
+              <p>${escapeHtml(q.explanation)}</p>
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">Question ${qIndex + 1} of ${STATE.currentQuiz.length}</span>
+            ${isAnswered ? (userAnswer === q.answer ? '<span class="text-xs font-bold text-emerald-600">✅ 1 / 1 pt</span>' : '<span class="text-xs font-bold text-rose-500">❌ 0 / 1 pt</span>') : ''}
+          </div>
+          <h4 class="font-bold text-base md:text-lg text-slate-800 dark:text-white">${escapeHtml(q.question)}</h4>
+          <div class="space-y-2.5 pt-2">
+            ${optionsHtml}
+          </div>
+          ${explanationHtml}
+        `;
+
+        list.appendChild(card);
+      });
+
+      // Update quiz top counter
+      document.getElementById('quizAnsweredCount').textContent = `${answeredCount} / 5 Answered`;
+      document.getElementById('quizScoreText').textContent = `${scoreCount} / 5 Correct`;
+
+      // Check if all answered
+      if (answeredCount === 5) {
+        const banner = document.getElementById('quizCompletionBanner');
+        const summary = document.getElementById('quizFinalScoreSummary');
+        const pct = Math.round((scoreCount / 5) * 100);
+        summary.textContent = `You scored ${scoreCount} out of 5 (${pct}%) on this quiz.`;
+        banner.classList.remove('hidden');
+        banner.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function handleSelectQuizAnswer(qIndex, optIndex) {
+      if (STATE.quizUserAnswers[qIndex] !== undefined) return;
+      STATE.quizUserAnswers[qIndex] = optIndex;
+      renderQuiz();
+    }
+
+    function retakeCurrentQuiz() {
+      STATE.quizUserAnswers = {};
+      document.getElementById('quizCompletionBanner').classList.add('hidden');
+      renderQuiz();
+    }
+
+    // -------------------------------------------------------------
+    // MODULE 5: FLASHCARDS
+    // -------------------------------------------------------------
+    async function generateFlashcards() {
+      if (!STATE.activeDocument) {
+        showNotification('Please upload or select a study document first.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('generateCardsBtn');
+      const spinner = document.getElementById('cardsSpinner');
+      const placeholder = document.getElementById('flashcardsPlaceholder');
+      const grid = document.getElementById('flashcardsGrid');
+      const flipAllBtn = document.getElementById('flipAllCardsBtn');
+
+      btn.setAttribute('disabled', 'true');
+      spinner.classList.remove('hidden');
+
+      try {
+        const res = await fetch('/api/flashcards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentId: STATE.activeDocument.documentId })
+        });
+
+        const data = await safeJsonResponse(res);
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to generate flashcards');
+        }
+
+        if (!data.cards || data.cards.length === 0) {
+          throw new Error('No flashcards returned from model');
+        }
+
+        STATE.currentCards = data.cards;
+
+        placeholder.classList.add('hidden');
+        grid.classList.remove('hidden');
+        flipAllBtn.classList.remove('hidden');
+
+        renderFlashcards();
+        showNotification('8 Flashcards generated successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        showNotification(err.message, 'error');
+      } finally {
+        spinner.classList.add('hidden');
+        btn.removeAttribute('disabled');
+      }
+    }
+
+    function renderFlashcards() {
+      const grid = document.getElementById('flashcardsGrid');
+      grid.innerHTML = '';
+
+      STATE.currentCards.forEach((c, idx) => {
+        const cardWrapper = document.createElement('div');
+        cardWrapper.className = 'perspective-1000 h-64 cursor-pointer select-none';
+        cardWrapper.onclick = () => cardWrapper.classList.toggle('card-flipped');
+
+        cardWrapper.innerHTML = `
+          <div class="card-inner relative w-full h-full transform-style-3d transition-transform-600 rounded-2xl shadow-sm">
+            <!-- Front Face -->
+            <div class="card-front absolute inset-0 backface-hidden bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between hover:shadow-md hover:border-brand-500/40 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">Card ${idx + 1} of 8</span>
+                <span class="w-6 h-6 rounded-full bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center text-xs">💡</span>
+              </div>
+              <div class="my-auto text-center font-bold text-slate-800 dark:text-white text-base leading-snug">
+                ${escapeHtml(c.front)}
+              </div>
+              <div class="text-center text-xs font-medium text-slate-400 flex items-center justify-center gap-1">
+                <span>Click to flip</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              </div>
+            </div>
+
+            <!-- Back Face -->
+            <div class="card-back absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-tr from-brand-900/90 to-slate-900 text-white rounded-2xl p-6 border border-brand-500/40 flex flex-col justify-between shadow-md">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-brand-300 uppercase tracking-wider">Answer / Definition</span>
+                <span class="w-6 h-6 rounded-full bg-brand-800/80 text-brand-200 flex items-center justify-center text-xs">🎯</span>
+              </div>
+              <div class="my-auto text-center text-sm font-medium text-slate-100 overflow-y-auto max-h-36 pr-1 leading-relaxed">
+                ${escapeHtml(c.back)}
+              </div>
+              <div class="text-center text-xs font-medium text-brand-300/80 flex items-center justify-center gap-1">
+                <span>Click to flip back</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              </div>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(cardWrapper);
+      });
+    }
+
+    let allFlipped = false;
+    function toggleFlipAllCards() {
+      allFlipped = !allFlipped;
+      const cards = document.querySelectorAll('#flashcardsGrid .perspective-1000');
+      cards.forEach(card => {
+        if (allFlipped) {
+          card.classList.add('card-flipped');
+        } else {
+          card.classList.remove('card-flipped');
+        }
+      });
+      document.getElementById('flipAllCardsBtn').textContent = allFlipped ? 'Reset All' : 'Flip All';
+    }
+
+    // -------------------------------------------------------------
+    // MODULE 6: PERFORMANCE ANALYTICS & RESET
+    // -------------------------------------------------------------
+    function confirmResetAnalytics() {
+      document.getElementById('resetModal').classList.remove('hidden');
+    }
+
+    function closeResetModal() {
+      document.getElementById('resetModal').classList.add('hidden');
+    }
+
+    function executeResetAnalytics() {
+      STATE.stats.totalSeconds = 0;
+      STATE.stats.completedSessions = 0;
+      saveStats();
+      closeResetModal();
+      showNotification('Study analytics have been reset to zero.', 'info');
+    }
+
+    // Utility escape function
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // -------------------------------------------------------------
+    // Application Initialization
+    // -------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSavedState();
+      switchTab('dashboard');
+      updateTimerDisplay();
+
+      // Check server health on launch
+      fetch('/api/health')
+        .then(res => res.json())
+        .then(data => {
+          console.log('StudyHub API connected:', data);
+        })
+        .catch(err => {
+          console.warn('StudyHub server check warning:', err);
+        });
+    });
+  </script>
+</body>
+</html>
